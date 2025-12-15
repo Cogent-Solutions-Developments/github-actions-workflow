@@ -38,7 +38,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-        # Pull env vars + project settings (Preview/Production)
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      # Pull env vars + project settings (Preview/Production)
       - name: Vercel Pull
         run: vercel pull --yes --environment=${{ steps.env.outputs.deploy_env }} --token=${{ secrets.VERCEL_TOKEN }}
         env:
