@@ -9,58 +9,36 @@ on:
 
 jobs:
   build:
+    if: ${{ github.event.pull_request.merged == true }}
     runs-on: ubuntu-latest
-    outputs:
-      deploy_env: ${{ steps.env.outputs.deploy_env }}
-      deploy_flag: ${{ steps.env.outputs.deploy_flag }}
-
     steps:
-      - name: Decide enviroment
-        id: env
-        run: |
-          if [ "${{ github.ref_name }}" = "production" ]; then
-            echo "deploy_env=production" >> $GITHUB_OUTPUT
-            echo "deploy_flag=--prod" >> $GITHUB_OUTPUT
-          else
-            echo "deploy_env=preview" >> $GITHUB_OUTPUT
-            echo "deploy_flag=" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+      - run: npm ci
+      - run: npm i -g vercel@latest
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Vercel CLI
-        run: npm install --global vercel@latest
-
-      # Pull env vars + project settings (Preview/Production)
       - name: Vercel Pull
-        run: vercel pull --yes --environment=${{ steps.env.outputs.deploy_env }} --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-      # Build on CI -> generates .vercel/output
       - name: Vercel Build
-        run: vercel build ${{ steps.env.outputs.deploy_flag }} --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-      # Upload prebuilt output so deploy job can use it
       - name: Upload Vercel prebuilt output
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: vercel-prebuilt
           path: .vercel
+
 
 
   # deploy:
@@ -102,6 +80,7 @@ jobs:
           name: vercel-prebuilt
           path: .vercel
 
+
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
@@ -128,7 +107,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: vercel-prebuilt
-          path: .vercel/output
+          path: .vercel
 
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
