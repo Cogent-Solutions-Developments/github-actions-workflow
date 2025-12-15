@@ -32,12 +32,12 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-      - name: Upload Vercel prebuilt output
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: vercel-prebuilt
-          path: .vercel
+      # - name: Upload Vercel prebuilt output
+      #   if: always()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: vercel-prebuilt
+      #     path: .vercel
 
 
 
@@ -74,11 +74,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download Vercel prebuilt output
-        uses: actions/download-artifact@v4
-        with:
-          name: vercel-prebuilt
-          path: .vercel
+      # - name: Download Vercel prebuilt output
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: vercel-prebuilt
+      #     path: .vercel
 
 
       - name: Install Vercel CLI
@@ -87,8 +87,11 @@ jobs:
       - name: Pull Vercel Environment Information
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Deploy (prebuilt)
-        run: vercel deploy --prebuilt ${{ needs.build.outputs.deploy_flag }} --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Build Project Artifacts
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy Project Artifacts to Vercel
+        run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
